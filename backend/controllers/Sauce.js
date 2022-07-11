@@ -1,5 +1,6 @@
 const sauce = require("../models/Sauce");
 const mongoose = require("mongoose");
+const fs = require("fs");
 
 exports.getAllSauce = (req, res, next) => {
     sauce
@@ -56,10 +57,18 @@ exports.modifySauce = (req, res, next) => {
 
 exports.deleteSauce = (req, res, next) => {
     sauce
-        .deleteOne({ _id: req.params.id })
-        .then(() => {
-            res.status(200).json({
-                message: "Objet supprimé !",
+        .findOne({ _id: req.params.id })
+        .then((element) => {
+            const filename = element.imageUrl.split("/images/")[1];
+            fs.unlink(`images/${filename}`, () => {
+                sauce
+                    .deleteOne({ _id: req.params.id })
+                    .then(() => {
+                        res.status(200).json({
+                            message: "Objet supprimé !",
+                        });
+                    })
+                    .catch((error) => res.status(401).json({ error }));
             });
         })
         .catch((error) => res.status(401).json({ error }));
@@ -72,6 +81,13 @@ exports.likeSauce = (req, res) => {
         .then((element) => {
             //si like = 1
             if (req.body.like === 1) {
+                // l'utilisateur n'apparait pas 2 fois dans le array
+                for (let i = 0; i < element.usersLiked.length; i++) {
+                    if (req.body.userId == element.userId) {
+                        element.usersLiked.splice(i, 1);
+                        element.likes -= 1;
+                    }
+                }
                 // on ajoute +1 au like
                 element.likes += 1;
                 element.usersLiked.push(req.body.userId);
@@ -79,10 +95,33 @@ exports.likeSauce = (req, res) => {
 
             //si dislike = -1
             if (req.body.like === -1) {
+                // l'utilisateur n'apparait pas 2 fois dans le array
+                for (let i = 0; i < element.usersDisliked.length; i++) {
+                    if (req.body.userId == element.userId) {
+                        element.usersDisliked.splice(i, 1);
+                        element.dislikes -= 1;
+                    }
+                }
                 //on ajoute +1 au dislike
                 element.dislikes += 1;
                 element.usersDisliked.push(req.body.userId);
             }
+            //si like ou dislike = 0
+            if (req.body.like === 0) {
+                for (let i = 0; i < element.usersLiked.length; i++) {
+                    if (req.body.userId == element.userId) {
+                        element.usersLiked.splice(i, 1);
+                        element.likes -= 1;
+                    }
+                }
+                for (let i = 0; i < element.usersDisliked.length; i++) {
+                    if (req.body.userId == element.userId) {
+                        element.usersDisliked.splice(i, 1);
+                        element.dislikes -= 1;
+                    }
+                }
+            }
+
             //sauvegarder l'élément(like,dislike,nul)
             sauce
                 .updateOne(
@@ -100,13 +139,10 @@ exports.likeSauce = (req, res) => {
                     });
                 });
 
-            // l'utilisateur ne doit pas liker 2 fois une photo
             // quand il enlève son like ou dislike
+            // gerer le 0, il faut supprimer le userId de mon tableau
             // le tableau ne doit pas contenir 2 fois le user
-
             //si pas de like ou dislike = 0
-            /*if (req.body.like === 0) {
-            }*/
         })
 
         .catch((error) => res.status(401).json({ error }));
