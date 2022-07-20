@@ -6,11 +6,13 @@ const path = require("path");
 const userRoutes = require("./routes/User");
 const sauceRoutes = require("./routes/Sauce");
 
+require("dotenv").config();
+
 mongoose
-    .connect(
-        "mongodb+srv://AlexDSRP:Alexou78@cluster0.syfjn.mongodb.net/?retryWrites=true&w=majority",
-        { useNewUrlParser: true, useUnifiedTopology: true }
-    )
+    .connect(process.env.DB_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
     .then(() => console.log("Connexion à MongoDB réussie !"))
     .catch(() => console.log("Connexion à MongoDB échouée !"));
 
