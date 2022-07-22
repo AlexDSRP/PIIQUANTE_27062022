@@ -79,48 +79,24 @@ exports.likeSauce = (req, res) => {
     sauce
         .findOne({ _id: req.params.id })
         .then((element) => {
-            //si like = 1
+            //on supprime les users du array
+            const filtreLike = element.usersLiked.filter((user) => {
+                return user != req.body.userId;
+            });
+            const filtreDislike = element.usersDisliked.filter((user) => {
+                return user != req.body.userId;
+            });
+
+            //On ajoute le like et dislike du user
             if (req.body.like === 1) {
-                // l'utilisateur n'apparait pas 2 fois dans le array
-                for (let i = 0; i < element.usersLiked.length; i++) {
-                    if (req.body.userId == element.userId) {
-                        element.usersLiked.splice(i, 1);
-                        element.likes -= 1;
-                    }
-                }
-                // on ajoute +1 au like
-                element.likes += 1;
-                element.usersLiked.push(req.body.userId);
+                filtreLike.push(req.body.userId);
+            } else if (req.body.like === -1) {
+                filtreDislike.push(req.body.userId);
             }
 
-            //si dislike = -1
-            if (req.body.like === -1) {
-                // l'utilisateur n'apparait pas 2 fois dans le array
-                for (let i = 0; i < element.usersDisliked.length; i++) {
-                    if (req.body.userId == element.userId) {
-                        element.usersDisliked.splice(i, 1);
-                        element.dislikes -= 1;
-                    }
-                }
-                //on ajoute +1 au dislike
-                element.dislikes += 1;
-                element.usersDisliked.push(req.body.userId);
-            }
-            //si like ou dislike = 0
-            if (req.body.like === 0) {
-                for (let i = 0; i < element.usersLiked.length; i++) {
-                    if (req.body.userId == element.userId) {
-                        element.usersLiked.splice(i, 1);
-                        element.likes -= 1;
-                    }
-                }
-                for (let i = 0; i < element.usersDisliked.length; i++) {
-                    if (req.body.userId == element.userId) {
-                        element.usersDisliked.splice(i, 1);
-                        element.dislikes -= 1;
-                    }
-                }
-            }
+            //Maj de la taille du array user
+            element.likes = filtreLike.length;
+            element.dislikes = filtreDislike.length;
 
             //sauvegarder l'élément(like,dislike,nul)
             sauce
@@ -129,8 +105,8 @@ exports.likeSauce = (req, res) => {
                     {
                         likes: element.likes,
                         dislikes: element.dislikes,
-                        usersLiked: element.usersLiked,
-                        usersDisliked: element.usersDisliked,
+                        usersLiked: filtreLike,
+                        usersDisliked: filtreDislike,
                     }
                 )
                 .then(() => {
@@ -138,12 +114,6 @@ exports.likeSauce = (req, res) => {
                         message: "Like ajouté !",
                     });
                 });
-
-            // quand il enlève son like ou dislike
-            // gerer le 0, il faut supprimer le userId de mon tableau
-            // le tableau ne doit pas contenir 2 fois le user
-            //si pas de like ou dislike = 0
         })
-
         .catch((error) => res.status(401).json({ error }));
 };
