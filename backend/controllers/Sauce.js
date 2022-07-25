@@ -98,7 +98,7 @@ exports.likeSauce = (req, res) => {
             element.likes = filtreLike.length;
             element.dislikes = filtreDislike.length;
 
-            //sauvegarder l'élément(like,dislike,nul)
+            //sauvegarder l'élément(like,dislike)
             sauce
                 .updateOne(
                     { _id: req.params.id },
